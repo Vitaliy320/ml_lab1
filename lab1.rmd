@@ -1,0 +1,145 @@
+---
+title: "lab 1"
+author: Vitalii Borysov
+output: html_document
+date: "06 05 2022"
+---
+
+```{r echo=FALSE}
+library("ggplot2")
+
+original_NEI <- readRDS("summarySCC_PM25.rds")
+original_SCC <- readRDS("Source_Classification_Code.rds")
+```
+
+
+# =====================TASK=1===========================
+```{r echo=FALSE}
+NEI <- original_NEI
+SCC <- original_SCC
+
+summary <- setNames(aggregate(NEI$Emissions, by=list(year=NEI$year), 
+                              FUN=sum), c('year', 'Emissions'))
+
+barplot(summary$Emissions
+        , names = summary$year
+        , xlab = "Years", ylab = "Emissions"
+        , main = "Emissions over the Years")
+```        
+
+
+        
+# =====================TASK=2===========================
+```{r echo=FALSE}
+NEI <- original_NEI
+SCC <- original_SCC
+
+sub_set <- subset(NEI, fips == "24510")
+summary = setNames(aggregate(sub_set$Emissions, by=list(year=sub_set$year), 
+                            FUN=sum), c('year', 'Emissions'))
+
+barplot(summary$Emissions
+        , names = summary$year
+        , xlab = "Years", ylab = "Emissions"
+        , main = "Emissions over the Years")
+```
+
+
+       
+# =====================TASK=3===========================
+```{r echo=FALSE}
+NEI <- original_NEI
+SCC <- original_SCC
+
+sub_set <- subset(NEI, fips == "24510")
+summary = setNames(aggregate(sub_set$Emissions, by=list(year=sub_set$year), 
+                             FUN=sum), c('year', 'Emissions'))
+
+
+ggplot(sub_set,aes(factor(year),Emissions,fill=type)) +
+  geom_bar(stat="identity") +
+  theme_bw() + guides(fill=FALSE)+
+  facet_grid(.~type,space="free") + 
+  labs(x="year", y=expression("Total PM Emission (Tons)")) + 
+  labs(title=expression("PM"[2.5]*" Emissions, Baltimore City 1999-2008 by Type"))
+```
+
+
+
+# =====================TASK=4===========================
+```{r echo=FALSE}
+NEI <- original_NEI
+SCC <- original_SCC
+
+coal_related <- subset(SCC, (grepl("Coal", EI.Sector)))
+coal_and_combustion_related <- subset(coal_related, (grepl("Comb", EI.Sector)))
+scc_values <- coal_and_combustion_related[,"SCC"]
+
+nei_by_ssc <- subset(NEI, SCC %in% scc_values)
+summary <- setNames(aggregate(nei_by_ssc$Emissions, by=list(year=nei_by_ssc$year), 
+                              FUN=sum), c('year', 'Emissions'))
+
+barplot(summary$Emissions
+        , names = summary$year
+        , xlab = "Years", ylab = "Emissions"
+        , main = "Emissions over the Years")
+```
+
+
+
+# =====================TASK=5===========================
+```{r echo=FALSE}
+NEI <- original_NEI
+SCC <- original_SCC
+
+Baltimore_data <- subset(NEI, fips=="24510")
+vehicles <- subset(SCC, grepl("vehicle", SCC.Level.Two, ignore.case = TRUE))
+
+scc_values <- vehicles[,"SCC"]
+
+nei_by_ssc <- subset(Baltimore_data, SCC %in% scc_values)
+summary <- setNames(aggregate(nei_by_ssc$Emissions, by=list(year=nei_by_ssc$year), 
+                              FUN=sum), c('year', 'Emissions'))
+
+barplot(summary$Emissions
+        , names = summary$year
+        , xlab = "Years", ylab = "Emissions"
+        , main = "Vehicle emissions in Baltimore over the years")
+```
+
+
+
+# =====================TASK=6===========================
+```{r echo=FALSE}
+NEI <- original_NEI
+SCC <- original_SCC
+
+Baltimore_data <- subset(NEI, fips=="24510")
+Los_Angeles_data <- subset(NEI, fips=="06037")
+vehicles <- subset(SCC, grepl("vehicle", SCC.Level.Two, ignore.case = TRUE))
+
+scc_values <- vehicles[,"SCC"]
+
+Baltimore_data_by_ssc <- subset(Baltimore_data, SCC %in% scc_values)
+Los_Angeles_data_by_ssc <- subset(Los_Angeles_data, SCC %in% scc_values)
+
+summary_Baltimore <- setNames(aggregate(
+  Baltimore_data_by_ssc$Emissions, by=list(year=Baltimore_data_by_ssc$year), 
+  FUN=sum), c('year', 'Emissions'))
+
+summary_LA <- setNames(aggregate(
+  Los_Angeles_data_by_ssc$Emissions, by=list(year=Los_Angeles_data_by_ssc$year), 
+  FUN=sum), c('year', 'Emissions'))
+
+summary_Baltimore$city <- c("Baltimore")
+summary_LA$city <- c("Los Angeles")
+
+Baltimore_and_LA <- rbind(summary_Baltimore,summary_LA)
+
+ggplot(Baltimore_and_LA, aes(x=factor(year), y=Emissions, fill=city)) +
+  geom_bar(aes(fill=year),stat="identity") +
+  facet_grid(scales="free", space="free", .~city) +
+  labs(x="year", y=expression("Emissions (Kilo-Tons)")) + 
+  labs(title=expression("Motor Vehicle Source Emissions in Baltimore and LA, 1999-2008"))
+```
+
